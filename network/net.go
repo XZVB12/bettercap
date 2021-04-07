@@ -101,16 +101,18 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 
 	// first isolate MACs and parse them
 	for _, mac := range macParser.FindAllString(targets, -1) {
-		mac = NormalizeMac(mac)
-		hw, err := net.ParseMAC(mac)
+		normalizedMac := NormalizeMac(mac)
+		hw, err := net.ParseMAC(normalizedMac)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error while parsing MAC '%s': %s", mac, err)
+			return nil, nil, fmt.Errorf("error while parsing MAC '%s': %s", normalizedMac, err)
 		}
 
 		macs = append(macs, hw)
 		targets = strings.Replace(targets, mac, "", -1)
 	}
 	targets = strings.Trim(targets, ", ")
+
+	// fmt.Printf("targets=%s macs=%#v\n", targets, macs)
 
 	// check and resolve aliases
 	for _, targetAlias := range aliasParser.FindAllString(targets, -1) {
@@ -137,7 +139,7 @@ func ParseTargets(targets string, aliasMap *data.UnsortedKV) (ips []net.IP, macs
 	if targets != "" {
 		list, err := iprange.ParseList(targets)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error while parsing address list '%s': %s.", targets, err)
+			return nil, nil, fmt.Errorf("error while parsing address list '%s': %s", targets, err)
 		}
 
 		ips = list.Expand()
